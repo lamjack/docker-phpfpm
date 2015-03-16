@@ -20,7 +20,7 @@ SRC="/usr/local/src/php-$VERSION"
 
 # 创建源码存放路径
 if [ ! -d "$SRCDIR" ]; then
-	mkdir -p $SRCDIR
+    mkdir -p $SRCDIR
 fi
 
 # 下载PHP源码并解压
@@ -28,12 +28,17 @@ URL="http://cn2.php.net/get/php-$VERSION.tar.bz2/from/this/mirror"
 cd "$SRCDIR" && wget "$URL" -O "$TAR_SRC_FILE"
 
 if [ ! -f "$TAR_FILE_SRC" ]; then
-	echo "Fetching sources from museum failed"
-	echo $URL
-	exit 1
+    echo "Fetching sources from museum failed"
+    echo $URL
+    exit 1
 fi
 
 tar xjvf "$TAR_FILE_SRC"
+
+if [ $? -gt 0 ]; then
+    echo "can not download php source code failed."
+    exit 1
+fi
 
 # 安装路径
 BASEPATH="/usr/local"
@@ -126,14 +131,24 @@ cd "$SRC"
     $ADD_CONF \
     $EXT_CONF
 
+if [ $? -gt 0 ]; then
+    echo configure.sh failed.
+    exit 2
+fi
+
 make && make install
+
+if [ $? -gt 0 ]; then
+    echo php-fpm install failed.
+    exit 3
+fi
 
 # config file
 cp $SRC/php.ini-development $CONF_DIR/php.ini
 cp $CONF_DIR/php-fpm.conf.default $CONF_DIR/php-fpm.conf
 
 # sed -i '/listen = 127.0.0.1:9000/clisten = 127.0.0.1:90$VMAJOR$VMINOR/g' /usr/local/php/5.4.38/php-fpm.conf
-ln -s "$PREFIX/php-fpm /usr/local/sbin"
+ln -s $PREFIX/php-fpm /usr/local/sbin/php-fpm
 
 groupadd -f -g 1001 -r www
 useradd -g 1001 -u 1001 -M -G www -r -s /sbin/nologin www
